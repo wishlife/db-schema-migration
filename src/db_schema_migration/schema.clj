@@ -118,8 +118,8 @@
   [action] ;; TODO: add support for additional parameter [target-version]
   {:pre [(contains? #{:upgrade :downgrade} action)]}
   (println "Starting" (name action))
-  (load "db_schema_migration") ; load db-schema-migration/levels and db-schema-migration/db
-  (println "result:" (deref (resolve (symbol "db-schema-migration" "db"))))
+  (load "db_schema_migration") ; load db-schema-migration/levels and db-schema-migration/db from resource db_schema_migration.clj
+  ;; (println "result:" (deref (resolve (symbol "db-schema-migration" "db"))))
   (with-open [^Connection conn (open-connection  (deref (resolve (symbol "db-schema-migration" "db"))))]
     ;; Disable sanity check, no need any more
     ;; (migration-sanity-check conn)
