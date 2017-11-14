@@ -70,7 +70,9 @@
   (clojure.string/replace db-subname #"^.*/|\?.*$" ""))
 
 (defn- open-connection
-  [classname subprotocol subname user password]
+  [{:keys [classname subprotocol subname user password] :as db}]
+  (if (not (and classname subprotocol subname user password))
+    (printf "Missing database(%s) parameters: classname: %s, subprotocol: %s, subname: %s, user: %s, password: %s.%n" db classname subprotocol subname user password))
   (let [url (format "jdbc:%s:%s" subprotocol subname)]
     (Class/forName classname)
     (try
@@ -113,10 +115,12 @@
         (throw ex)))))
 
 (defn- migrate-schema
-  [migration-levels action] ;; TODO: add support for additional parameter [target-version]
+  [action] ;; TODO: add support for additional parameter [target-version]
   {:pre [(contains? #{:upgrade :downgrade} action)]}
   (println "Starting" (name action))
-  (with-open [^Connection conn (open-connection)]
+  (load "db_schema_migration") ; load db-schema-migration/levels and db-schema-migration/db
+  (println "result:" (deref (resolve (symbol "db-schema-migration" "db"))))
+  (with-open [^Connection conn (open-connection  (deref (resolve (symbol "db-schema-migration" "db"))))]
     ;; Disable sanity check, no need any more
     ;; (migration-sanity-check conn)
     (.setAutoCommit conn false)
@@ -130,12 +134,11 @@
     (let [version-set (->> (execute conn "SELECT version_name FROM schema_version")
                            (map :version-name)
                            (map keyword)
-                           (into #{}))
-          migration-levels (load "migration-levels")]
-      (printf "Schema currently has %d of %d upgrades%n" (count version-set) (count migration-levels))
+                           (into #{}))]
+      (printf "Schema currently has %d of %d upgrades%n" (count version-set) (count (symbol "db-schema-migration" "levels")))
       (case action
         :upgrade
-        (->> migration-levels
+        (->> (symbol "db-schema-migration" "levels")
              (remove #(contains? version-set (:version-name %)))
              (run-migrations conn :upgrade))
 
