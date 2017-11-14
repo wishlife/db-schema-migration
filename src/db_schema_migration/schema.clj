@@ -135,10 +135,10 @@
                            (map :version-name)
                            (map keyword)
                            (into #{}))]
-      (printf "Schema currently has %d of %d upgrades%n" (count version-set) (count (symbol "db-schema-migration" "levels")))
+      (printf "Schema currently has %d of %d upgrades%n" (count version-set) (count (deref (resolve (symbol "db-schema-migration" "levels")))))
       (case action
         :upgrade
-        (->> (symbol "db-schema-migration" "levels")
+        (->> (deref (resolve (symbol "db-schema-migration" "levels")))
              (remove #(contains? version-set (:version-name %)))
              (run-migrations conn :upgrade))
 
