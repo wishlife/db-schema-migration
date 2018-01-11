@@ -115,10 +115,10 @@
         (throw ex)))))
 
 (defn- migrate-schema
-  [action] ;; TODO: add support for additional parameter [target-version]
+  [action migration-namespace] ;; TODO: add support for additional parameter [target-version]
   {:pre [(contains? #{:upgrade :downgrade} action)]}
   (println "Starting" (name action))
-  (load "db_schema_migration") ; load db-schema-migration/levels and db-schema-migration/db from resource db_schema_migration.clj
+  (load (or migration-namespace "db_schema_migration")) ; load db-schema-migration/levels and db-schema-migration/db from resource db_schema_migration.clj
   ;; (println "result:" (deref (resolve (symbol "db-schema-migration" "db"))))
   (with-open [^Connection conn (open-connection  (deref (resolve (symbol "db-schema-migration" "db"))))]
     ;; Disable sanity check, no need any more
@@ -159,7 +159,7 @@
           (case (first args)
             nil (println "Please specify one of 'upgrade', 'downgrade', or 'validate'")
             "validate" (validate-schema (database-name))
-            ("upgrade" "downgrade") (migrate-schema (keyword (first args)))
+            ("upgrade" "downgrade") (migrate-schema (keyword (first args)) (second args))
             (throw (UnsupportedOperationException. (str "Invalid command: " (first args))))))
         (catch Throwable ex
           (.printStackTrace ex)
