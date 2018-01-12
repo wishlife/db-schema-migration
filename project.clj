@@ -1,4 +1,4 @@
-(defproject db-schema-migration "0.1.1-SNAPSHOT"
+(defproject db-schema-migration "0.1.3"
   :description "A simple database schema migration tool for Clojure"
   :url "http://example.com/FIXME"
   :license {:name "Eclipse Public License"

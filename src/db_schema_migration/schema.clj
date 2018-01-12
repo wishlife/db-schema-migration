@@ -115,46 +115,47 @@
         (throw ex)))))
 
 (defn- migrate-schema
-  [action migration-namespace] ;; TODO: add support for additional parameter [target-version]
+  [action migration-name] ;; TODO: add support for additional parameter [target-version]
   {:pre [(contains? #{:upgrade :downgrade} action)]}
-  (println "Starting" (name action))
-  (load (or migration-namespace "db_schema_migration")) ; load db-schema-migration/levels and db-schema-migration/db from resource db_schema_migration.clj
-  ;; (println "result:" (deref (resolve (symbol "db-schema-migration" "db"))))
-  (with-open [^Connection conn (open-connection  (deref (resolve (symbol "db-schema-migration" "db"))))]
-    ;; Disable sanity check, no need any more
-    ;; (migration-sanity-check conn)
-    (.setAutoCommit conn false)
-    (println "Creating schema_version table if it does not exist")
-    (execute conn "CREATE TABLE IF NOT EXISTS schema_version (
+  (let [migration-name (or migration-name "db_schema_migration")
+        migration-namespace (clojure.string/replace migration-name #"_" "-")]
+    (load migration-name) ; load db-schema-migration/levels and db-schema-migration/db from resource db_schema_migration.clj
+    ;; (println "result:" (deref (resolve (symbol "db-schema-migration" "db"))))
+    (with-open [^Connection conn (open-connection  (deref (resolve (symbol migration-namespace "db"))))]
+      ;; Disable sanity check, no need any more
+      ;; (migration-sanity-check conn)
+      (.setAutoCommit conn false)
+      (println "Creating schema_version table if it does not exist")
+      (execute conn "CREATE TABLE IF NOT EXISTS schema_version (
                      version_name VARCHAR(80) NOT NULL UNIQUE,
                      migrated_at TIMESTAMP NOT NULL DEFAULT NOW(),
                      sql TEXT NOT NULL
                   )")
-    (.commit conn)
-    (let [version-set (->> (execute conn "SELECT version_name FROM schema_version")
-                           (map :version-name)
-                           (map keyword)
-                           (into #{}))]
-      (printf "Schema currently has %d of %d upgrades%n" (count version-set) (count (deref (resolve (symbol "db-schema-migration" "levels")))))
-      (case action
-        :upgrade
-        (->> (deref (resolve (symbol "db-schema-migration" "levels")))
-             (remove #(contains? version-set (:version-name %)))
-             (run-migrations conn :upgrade))
+      (.commit conn)
+      (let [version-set (->> (execute conn "SELECT version_name FROM schema_version")
+                             (map :version-name)
+                             (map keyword)
+                             (into #{}))]
+        (printf "Schema currently has %d of %d upgrades%n" (count version-set) (count (deref (resolve (symbol migration-namespace "levels")))))
+        (case action
+          :upgrade
+          (->> (deref (resolve (symbol migration-namespace "levels")))
+               (remove #(contains? version-set (:version-name %)))
+               (run-migrations conn :upgrade))
 
-        :downgrade
-        ;; downgrades would work something like this:
-        ;; BUT MAKE SURE target-version EXISTS, or it will downgrade to an empty database!
-        ;; (->> (reverse migration-levels)
-        ;;      (take-while #(not= target-version (:version-name %)))
-        ;;      (filter #(contains? version-set (:version-name %)))
-        ;;      (run-migrations conn :downgrade))
-        (throw (UnsupportedOperationException. "downgrade is not currently supported"))))))
+          :downgrade
+          ;; downgrades would work something like this:
+          ;; BUT MAKE SURE target-version EXISTS, or it will downgrade to an empty database!
+          ;; (->> (reverse migration-levels)
+          ;;      (take-while #(not= target-version (:version-name %)))
+          ;;      (filter #(contains? version-set (:version-name %)))
+          ;;      (run-migrations conn :downgrade))
+          (throw (UnsupportedOperationException. "downgrade is not currently supported")))))))
 
 (defn -main
   [& args]
   (-> (try
-        (if (next args)
+        (if (> (count args) 2)
           (throw (IllegalArgumentException. "Additional command arguments are not supported"))
           (case (first args)
             nil (println "Please specify one of 'upgrade', 'downgrade', or 'validate'")
