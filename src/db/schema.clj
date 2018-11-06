@@ -1,6 +1,6 @@
-(ns db-schema-migration.schema
-  (:require [db-schema-migration.simple-jdbc :refer [execute]]
-            [db-schema-migration.schema-validate :refer [validate-schema]])
+(ns db.schema
+  (:require [db.simple-jdbc :refer [execute]]
+            [db.schema-validate :refer [validate-schema]])
   (:import (java.sql Connection
                      DriverManager
                      PreparedStatement

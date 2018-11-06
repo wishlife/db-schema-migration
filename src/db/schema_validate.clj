@@ -1,4 +1,4 @@
-(ns db-schema-migration.schema-validate
+(ns db.schema-validate
   (:import (java.io File)
            (java.net URL)
            (java.text SimpleDateFormat)

@@ -1,4 +1,4 @@
-(ns db-schema-migration.simple-jdbc
+(ns db.simple-jdbc
   (:import (java.sql Connection
                      PreparedStatement
                      ResultSet
