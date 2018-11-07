@@ -115,12 +115,19 @@
         (throw ex)))))
 
 (defn- migrate-schema
-  [action migration-name] ;; TODO: add support for additional parameter [target-version]
+  [action migration-namespace] ;; TODO: add support for additional parameter [target-version]
   {:pre [(contains? #{:upgrade :downgrade} action)]}
-  (let [migration-name (or migration-name "db_schema_migration")
-        migration-namespace (clojure.string/replace migration-name #"_" "-")]
-    (load migration-name) ; load db-schema-migration/levels and db-schema-migration/db from resource db_schema_migration.clj
-    ;; (println "result:" (deref (resolve (symbol "db-schema-migration" "db"))))
+  (let [migration-namespace (or migration-namespace "db-schema-migration")
+        migration-path (-> (name migration-namespace)
+                                (clojure.string/replace #"-" "_")
+                                (clojure.string/replace #"\." "/"))]
+    (load (str "/" migration-path)) ; load db-schema-migration/levels and db-schema-migration/db from resource db_schema_migration.clj
+    (println "migration-namespace:" migration-namespace)
+    (println "migration-path:" migration-path)
+    (println "symbol:" (symbol migration-namespace "db"))
+    (println "resolve:" (resolve (symbol migration-namespace "db")))
+    (println "deref:" (deref (resolve (symbol migration-namespace "db"))))
+    (println "result:" (deref (resolve (symbol migration-namespace "db"))))
     (with-open [^Connection conn (open-connection  (deref (resolve (symbol migration-namespace "db"))))]
       ;; Disable sanity check, no need any more
       ;; (migration-sanity-check conn)
