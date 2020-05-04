@@ -35,21 +35,17 @@
 
 (defn compare-dump
   [expected actual]
-  (if-not (and (instance? URL expected)
-               (= "file" (.getProtocol expected)))
-    (throw (IllegalArgumentException. (format "cannot diff '%s'" expected))))
   (let [diff (exec ["diff" (.getFile expected) "-"] actual)]
     (case (:exit diff)
       0 (println "Schema is valid")
-      1 (let [dir (.getParentFile (File. (.getFile expected)))
-              file (File. dir (.format (SimpleDateFormat. "'schema-validate.'YYYY-MM-dd'T'HHmmss'.sql'") (Date.)))]
+      1 (let [actual-file (.format (SimpleDateFormat. "'schema-validate.'YYYY-MM-dd'T'HHmmss'.sql'") (Date.))]
           (println "Schema differences found!")
           (println (:out diff))
-          (println "Writing current schema to" (.getAbsolutePath file))
+          (println "Writing current schema to" actual-file)
           (println "If the above differences are correct, please copy this file over schema-validate.sql")
-          (if (.exists file)
-            (printf "WARNING %s exists! Not overwriting.%n" file)
-            (spit file actual)))
+          (if (.exists actual-file)
+            (printf "WARNING %s exists! Not overwriting.%n" actual-file)
+            (spit actual-file actual)))
       (printf "DIFF ERROR! (code = %d)%n%s%n" (:exit diff) (or (:err diff)
                                                                (:out diff))))
     (:exit diff)))
