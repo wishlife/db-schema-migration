@@ -32,7 +32,7 @@
       (str/replace #"(?m)^(?:REVOKE|GRANT)\s.*;$" "") ;; remove grants/revokes
       (str/replace #"(?<=^|\r\n?|\n)(?:\r\n?|\n)+" ""))) ;; remove empty lines
 
-(defn- compare-dump
+(defn compare-dump
   [expected actual]
   (if-not (and (instance? URL expected)
                (= "file" (.getProtocol expected)))
@@ -60,10 +60,6 @@
     (if-not (= 0 (:exit dump))
       (throw (ex-info (format "export failed: %s%n" (clojure.string/trim (:err dump))) {:database database-name}))
       (cleanup-dump (:out dump)))))
-
-(defn compare-dump
-  [first-schema second-schema]
-  (compare-dump first-schema second-schema))
 
 (defn validate-schema
   [database-name]
