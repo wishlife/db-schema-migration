@@ -4,7 +4,8 @@
            (java.text SimpleDateFormat)
            (java.util Date))
   (:require [clojure.java.io :as io]
-            [clojure.string :as str]))
+            [clojure.string :as str])
+  (:gen-class))
 
 (defn- exec
   ([cmd-array]
