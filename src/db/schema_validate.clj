@@ -53,11 +53,19 @@
                                                                (:out diff))))
     (:exit diff)))
 
-(defn validate-schema
+(defn export-schema
   [database-name]
   {:pre [(re-matches #"^\w+$" database-name)]}
   (let [dump (exec ["pg_dump" "--schema-only" database-name])]
     (if-not (= 0 (:exit dump))
-      (printf "validation failed: %s%n" (clojure.string/trim (:err dump)))
-      (compare-dump (io/resource "schema-validate.sql")
-                    (cleanup-dump (:out dump))))))
+      (throw (ex-info (format "export failed: %s%n" (clojure.string/trim (:err dump))) {:database database-name}))
+      (cleanup-dump (:out dump)))))
+
+(defn compare-dump
+  [first-schema second-schema]
+  (compare-dump first-schema second-schema))
+
+(defn validate-schema
+  [database-name]
+  (compare-dump (io/resource "schema-validate.sql")
+                (export-schema database-name)))
