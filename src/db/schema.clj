@@ -87,7 +87,7 @@
           (printf "GRANT ALL PRIVILEGES ON DATABASE %s TO %s;%n" database user))
         (throw ex)))))
 
-(defn- run-migrations
+(defn run-migrations
   [^Connection conn action migrations]
   (let [count-to-run (count migrations)]
     (try
