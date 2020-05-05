@@ -43,7 +43,7 @@
           (println (:out diff))
           (println "Writing current schema to" actual-file)
           (println "If the above differences are correct, please copy this file over schema-validate.sql")
-          (if (.exists (io/resource actual-file))
+          (if (io/resource actual-file)
             (printf "WARNING %s exists! Not overwriting.%n" actual-file)
             (spit actual-file actual)))
       (printf "DIFF ERROR! (code = %d)%n%s%n" (:exit diff) (or (:err diff)
